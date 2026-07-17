@@ -220,6 +220,13 @@ body[data-view="done"] #view-done{display:flex;}
   color:var(--graphite);
   line-height:1.25;
 }
+.theme-btn{
+  padding:0.6rem 0.5rem;
+  text-align:center;
+  align-items:center;
+}
+.theme-btn .preset-name{font-size:0.95rem;}
+
 .preset-bar{
   display:flex;
   height:6px;
@@ -536,6 +543,17 @@ body[data-kind="prep"] .dial-time{color:var(--graphite);}
 }
 </style>
 
+<script>
+(function(){
+  try{
+    var saved = localStorage.getItem("croquis-theme");
+    if(saved === "light" || saved === "dark"){
+      document.documentElement.dataset.theme = saved;
+    }
+  }catch(e){}
+})();
+</script>
+
 <div id="view-setup" class="view">
   <div class="wordmark">CROQUIS<span>.</span></div>
   <div class="tagline">gesture session timer</div>
@@ -582,6 +600,20 @@ body[data-kind="prep"] .dial-time{color:var(--graphite);}
   <details class="card" id="settingsPanel">
     <summary>Settings</summary>
     <div class="settings-body">
+      <div class="setting-block">
+        <span class="field-label">Theme</span>
+        <div class="presets theme-presets" role="group" aria-label="Theme">
+          <button class="preset-btn theme-btn" data-theme-choice="system" aria-pressed="true">
+            <span class="preset-name">System</span>
+          </button>
+          <button class="preset-btn theme-btn" data-theme-choice="light" aria-pressed="false">
+            <span class="preset-name">Light</span>
+          </button>
+          <button class="preset-btn theme-btn" data-theme-choice="dark" aria-pressed="false">
+            <span class="preset-name">Dark</span>
+          </button>
+        </div>
+      </div>
       <div class="setting-block">
         <span class="field-label">Rest between poses</span>
         <div class="presets rest-presets" role="group" aria-label="Rest between poses">
@@ -880,6 +912,31 @@ body[data-kind="prep"] .dial-time{color:var(--graphite);}
       updatePreview();
     });
   });
+
+  (function themeControl(){
+    var THEME_KEY = "croquis-theme";
+    var btns = document.querySelectorAll(".theme-presets .preset-btn");
+    function apply(choice){
+      if(choice === "light" || choice === "dark"){
+        document.documentElement.dataset.theme = choice;
+      }else{
+        delete document.documentElement.dataset.theme;
+      }
+      btns.forEach(function(b){
+        b.setAttribute("aria-pressed", b.dataset.themeChoice === choice ? "true" : "false");
+      });
+    }
+    var saved = "system";
+    try{ saved = localStorage.getItem(THEME_KEY) || "system"; }catch(e){}
+    apply(saved);
+    btns.forEach(function(btn){
+      btn.addEventListener("click", function(){
+        var choice = btn.dataset.themeChoice;
+        apply(choice);
+        try{ localStorage.setItem(THEME_KEY, choice); }catch(e){}
+      });
+    });
+  })();
 
   var previewLine = document.getElementById("previewLine");
 
