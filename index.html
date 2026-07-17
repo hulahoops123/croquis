@@ -220,13 +220,6 @@ body[data-view="done"] #view-done{display:flex;}
   color:var(--graphite);
   line-height:1.25;
 }
-.theme-btn{
-  padding:0.6rem 0.5rem;
-  text-align:center;
-  align-items:center;
-}
-.theme-btn .preset-name{font-size:0.95rem;}
-
 .preset-bar{
   display:flex;
   height:6px;
@@ -491,11 +484,6 @@ details.card[open] summary::after{content:"−";}
 }
 .ctrl-btn.primary svg{width:1.7rem; height:1.7rem;}
 .ctrl-btn.secondary{width:3.4rem; height:3.4rem;}
-.ctrl-btn[data-confirming="true"]{
-  background:var(--sanguine);
-  border-color:var(--sanguine);
-  color:#fff;
-}
 .ctrl-btn:focus-visible{outline:2px solid var(--sanguine); outline-offset:2px;}
 
 body[data-kind="gap"] .dial-time{color:var(--graphite);}
@@ -601,20 +589,6 @@ body[data-kind="prep"] .dial-time{color:var(--graphite);}
     <summary>Settings</summary>
     <div class="settings-body">
       <div class="setting-block">
-        <span class="field-label">Theme</span>
-        <div class="presets theme-presets" role="group" aria-label="Theme">
-          <button class="preset-btn theme-btn" data-theme-choice="system" aria-pressed="true">
-            <span class="preset-name">System</span>
-          </button>
-          <button class="preset-btn theme-btn" data-theme-choice="light" aria-pressed="false">
-            <span class="preset-name">Light</span>
-          </button>
-          <button class="preset-btn theme-btn" data-theme-choice="dark" aria-pressed="false">
-            <span class="preset-name">Dark</span>
-          </button>
-        </div>
-      </div>
-      <div class="setting-block">
         <span class="field-label">Rest between poses</span>
         <div class="presets rest-presets" role="group" aria-label="Rest between poses">
           <button class="preset-btn" data-rest="tight" aria-pressed="false">
@@ -647,6 +621,17 @@ body[data-kind="prep"] .dial-time{color:var(--graphite);}
           <input type="checkbox" id="toggleWake" checked>
           <span class="track"></span><span class="thumb"></span>
         </label>
+      </div>
+      <div class="toggle-row">
+        <span>Theme</span>
+        <span style="display:flex; align-items:center; gap:0.5rem; color:var(--graphite);">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path></svg>
+          <label class="switch">
+            <input type="checkbox" id="toggleDark">
+            <span class="track"></span><span class="thumb"></span>
+          </label>
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z"></path></svg>
+        </span>
       </div>
       <div class="toggle-row" id="installRow" style="display:none;">
         <span>Install app</span>
@@ -915,26 +900,23 @@ body[data-kind="prep"] .dial-time{color:var(--graphite);}
 
   (function themeControl(){
     var THEME_KEY = "croquis-theme";
-    var btns = document.querySelectorAll(".theme-presets .preset-btn");
-    function apply(choice){
-      if(choice === "light" || choice === "dark"){
-        document.documentElement.dataset.theme = choice;
-      }else{
-        delete document.documentElement.dataset.theme;
-      }
-      btns.forEach(function(b){
-        b.setAttribute("aria-pressed", b.dataset.themeChoice === choice ? "true" : "false");
+    var checkbox = document.getElementById("toggleDark");
+    var mql = window.matchMedia("(prefers-color-scheme: dark)");
+    var saved = null;
+    try{ saved = localStorage.getItem(THEME_KEY); }catch(e){}
+
+    checkbox.checked = saved ? saved === "dark" : mql.matches;
+
+    if(!saved && mql.addEventListener){
+      mql.addEventListener("change", function(e){
+        checkbox.checked = e.matches;
       });
     }
-    var saved = "system";
-    try{ saved = localStorage.getItem(THEME_KEY) || "system"; }catch(e){}
-    apply(saved);
-    btns.forEach(function(btn){
-      btn.addEventListener("click", function(){
-        var choice = btn.dataset.themeChoice;
-        apply(choice);
-        try{ localStorage.setItem(THEME_KEY, choice); }catch(e){}
-      });
+
+    checkbox.addEventListener("change", function(){
+      var choice = checkbox.checked ? "dark" : "light";
+      document.documentElement.dataset.theme = choice;
+      try{ localStorage.setItem(THEME_KEY, choice); }catch(e){}
     });
   })();
 
@@ -1251,16 +1233,25 @@ body[data-kind="prep"] .dial-time{color:var(--graphite);}
     document.getElementById("playPauseBtn").setAttribute("aria-label", isPlaying ? "Pause":"Resume");
   }
 
-  function finishSession(){
+  function endRuntime(){
     runtime.running = false;
     cancelAnimationFrame(runtime.rafId);
     releaseWake();
     exitFullscreen();
     window.speechSynthesis && window.speechSynthesis.cancel();
+  }
+
+  function finishSession(){
+    endRuntime();
     var poseCount = runtime.steps.filter(function(s){return s.type==="pose";}).length;
     document.getElementById("doneTotal").textContent = fmtClock(runtime.totalPlannedSec);
     document.getElementById("donePoseCount").textContent = poseCount + " poses completed";
     document.body.dataset.view = "done";
+  }
+
+  function stopSession(){
+    endRuntime();
+    document.body.dataset.view = "setup";
   }
 
   document.getElementById("startBtn").addEventListener("click", startSession);
@@ -1272,26 +1263,8 @@ body[data-kind="prep"] .dial-time{color:var(--graphite);}
     window.speechSynthesis && window.speechSynthesis.cancel();
     goToStep(runtime.index+1);
   });
-  var endConfirmTimer = null;
   document.getElementById("endBtn").addEventListener("click", function(){
-    var btn = this;
-    if(btn.dataset.confirming === "true"){
-      clearTimeout(endConfirmTimer);
-      btn.dataset.confirming = "false";
-      btn.setAttribute("aria-label","End session");
-      btn.title = "End session";
-      finishSession();
-      return;
-    }
-    btn.dataset.confirming = "true";
-    btn.setAttribute("aria-label","Tap again to confirm ending");
-    btn.title = "Tap again to end";
-    liveRegion.textContent = "Tap end again to confirm.";
-    endConfirmTimer = setTimeout(function(){
-      btn.dataset.confirming = "false";
-      btn.setAttribute("aria-label","End session");
-      btn.title = "End session";
-    }, 2500);
+    stopSession();
   });
   document.getElementById("restartBtn").addEventListener("click", function(){
     document.body.dataset.view = "setup";
