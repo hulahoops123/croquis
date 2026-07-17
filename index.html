@@ -843,6 +843,7 @@ body[data-kind="prep"] .dial-time{color:var(--graphite);}
        shortest to longest, so this fills quick tiers first and only reaches
        into longer ones if the time budget truly demands it. */
     var topUpGuard = 0;
+    var lastFillIdx = -1;
     while(usedSeconds() < totalSec && topUpGuard < 2000){
       var fillIdx = -1;
       for(var fi=0; fi<stages.length; fi++){
@@ -850,7 +851,19 @@ body[data-kind="prep"] .dial-time{color:var(--graphite);}
       }
       if(fillIdx === -1) break;
       counts[fillIdx]++;
+      lastFillIdx = fillIdx;
       topUpGuard++;
+    }
+    /* The loop above stops as soon as it crosses the target, which can
+       overshoot by nearly a full stage cycle. Check whether backing off
+       that last pose actually lands closer to the requested total. */
+    if(lastFillIdx !== -1){
+      var overshootTotal = usedSeconds();
+      counts[lastFillIdx]--;
+      var undershootTotal = usedSeconds();
+      if(Math.abs(overshootTotal-totalSec) <= Math.abs(undershootTotal-totalSec)){
+        counts[lastFillIdx]++;
+      }
     }
 
     var activeIdx = activeIndices();
