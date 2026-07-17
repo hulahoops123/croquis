@@ -620,6 +620,10 @@ body[data-kind="prep"] .dial-time{color:var(--graphite);}
         <span>Offline mode</span>
         <span id="pwaStatus" class="num" style="color:var(--graphite); font-size:0.8rem;">checking…</span>
       </div>
+      <div class="toggle-row" id="installRow" style="display:none;">
+        <span>Install app</span>
+        <button id="installBtn" type="button" style="background:var(--sanguine); color:#fff; border:none; border-radius:4px; padding:0.45rem 0.9rem; font-family:'Big Shoulders',sans-serif; font-weight:800; font-size:0.85rem; letter-spacing:0.02em; text-transform:uppercase; cursor:pointer;">Install</button>
+      </div>
     </div>
   </details>
 
@@ -1262,6 +1266,36 @@ body[data-kind="prep"] .dial-time{color:var(--graphite);}
       setStatus("ready — installable, works offline", true);
     }).catch(function(err){
       setStatus("unavailable here (" + (err && err.name || "error") + ")", false);
+    });
+  })();
+
+  (function installPrompt(){
+    var row = document.getElementById("installRow");
+    var btn = document.getElementById("installBtn");
+    var deferred = null;
+
+    function isStandalone(){
+      return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+    }
+    if(isStandalone()) return;
+
+    window.addEventListener("beforeinstallprompt", function(e){
+      e.preventDefault();
+      deferred = e;
+      row.style.display = "flex";
+    });
+
+    btn.addEventListener("click", function(){
+      if(!deferred) return;
+      deferred.prompt();
+      deferred.userChoice.then(function(){
+        deferred = null;
+        row.style.display = "none";
+      });
+    });
+
+    window.addEventListener("appinstalled", function(){
+      row.style.display = "none";
     });
   })();
 
