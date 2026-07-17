@@ -836,6 +836,23 @@ body[data-kind="prep"] .dial-time{color:var(--graphite);}
       counts[biggestI] = Math.max(floor2, Math.min(MAX_POSES_PER_STAGE, counts[biggestI]+adjust2));
     }
 
+    /* If capping stages at MAX_POSES_PER_STAGE left the schedule short of the
+       requested total — common for "Short" pacing on longer sessions, since
+       it weights almost everything into just a couple of quick tiers — spill
+       the remainder into whichever tier is next in line. Stages are ordered
+       shortest to longest, so this fills quick tiers first and only reaches
+       into longer ones if the time budget truly demands it. */
+    var topUpGuard = 0;
+    while(usedSeconds() < totalSec && topUpGuard < 2000){
+      var fillIdx = -1;
+      for(var fi=0; fi<stages.length; fi++){
+        if(counts[fi] < MAX_POSES_PER_STAGE){ fillIdx = fi; break; }
+      }
+      if(fillIdx === -1) break;
+      counts[fillIdx]++;
+      topUpGuard++;
+    }
+
     var activeIdx = activeIndices();
 
     var steps = [];
