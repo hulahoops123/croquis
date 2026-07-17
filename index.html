@@ -1,5 +1,14 @@
 <title>Croquis — Gesture Session Timer</title>
 <meta name="description" content="A ramp-up gesture-drawing session timer: set a total time and pacing, it builds the whole pose schedule for you.">
+<meta property="og:title" content="Croquis — Gesture Session Timer" />
+<meta property="og:description" content="A ramp-up gesture-drawing session timer. Set a total time and pacing, it builds the whole pose schedule for you." />
+<meta property="og:image" content="https://hulahoops123.github.io/croquis/og-preview.png" />
+<meta property="og:url" content="https://hulahoops123.github.io/croquis/" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="https://hulahoops123.github.io/croquis/og-preview.png" />
+<link rel="icon" type="image/png" href="./icon192.png">
+<link rel="apple-touch-icon" href="./icon192.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -107,13 +116,24 @@ body[data-view="done"] #view-done{display:flex;}
   margin:0 auto;
   padding:2.75rem 1.5rem 4rem;
 }
+.wordmark-row{
+  display:flex;
+  align-items:center;
+  gap:0.5rem;
+  margin-bottom:0.2rem;
+}
+.logo-mark{
+  flex:none;
+  width:clamp(2.4rem,7vw,3rem);
+  height:clamp(2.4rem,7vw,3rem);
+  color:var(--sanguine);
+}
 .wordmark{
   font-family:'Big Shoulders',sans-serif;
   font-weight:900;
   font-size:clamp(2.6rem,9vw,3.4rem);
   letter-spacing:0.01em;
   line-height:0.9;
-  margin-bottom:0.2rem;
 }
 .wordmark span{color:var(--sanguine);}
 .tagline{
@@ -548,7 +568,14 @@ body[data-kind="prep"] .dial-time{color:var(--graphite);}
 </script>
 
 <div id="view-setup" class="view">
-  <div class="wordmark">CROQUIS<span>.</span></div>
+  <div class="wordmark-row">
+    <svg class="logo-mark" viewBox="0 0 512 512" fill="none" aria-hidden="true">
+      <circle cx="250" cy="131.4" r="28.8" fill="currentColor"></circle>
+      <path d="M250,161.7 C303.3,222.9 202.5,294.9 281.7,384.9" stroke="currentColor" stroke-width="26" stroke-linecap="round"></path>
+      <path d="M256.1,262.5 C205.7,302.1 176.9,356.1 187.7,402.9" stroke="currentColor" stroke-width="22" stroke-linecap="round"></path>
+    </svg>
+    <div class="wordmark">CROQUIS<span>.</span></div>
+  </div>
   <div class="tagline">gesture session timer</div>
 
   <div class="card">
