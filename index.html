@@ -484,6 +484,11 @@ details.card[open] summary::after{content:"−";}
 }
 .ctrl-btn.primary svg{width:1.7rem; height:1.7rem;}
 .ctrl-btn.secondary{width:3.4rem; height:3.4rem;}
+.ctrl-btn[data-confirming="true"]{
+  background:var(--sanguine);
+  border-color:var(--sanguine);
+  color:#fff;
+}
 .ctrl-btn:focus-visible{outline:2px solid var(--sanguine); outline-offset:2px;}
 
 body[data-kind="gap"] .dial-time{color:var(--graphite);}
@@ -1263,8 +1268,26 @@ body[data-kind="prep"] .dial-time{color:var(--graphite);}
     window.speechSynthesis && window.speechSynthesis.cancel();
     goToStep(runtime.index+1);
   });
+  var endConfirmTimer = null;
   document.getElementById("endBtn").addEventListener("click", function(){
-    stopSession();
+    var btn = this;
+    if(btn.dataset.confirming === "true"){
+      clearTimeout(endConfirmTimer);
+      btn.dataset.confirming = "false";
+      btn.setAttribute("aria-label","End session");
+      btn.title = "End session";
+      stopSession();
+      return;
+    }
+    btn.dataset.confirming = "true";
+    btn.setAttribute("aria-label","Tap again to confirm ending");
+    btn.title = "Tap again to end";
+    liveRegion.textContent = "Tap end again to confirm.";
+    endConfirmTimer = setTimeout(function(){
+      btn.dataset.confirming = "false";
+      btn.setAttribute("aria-label","End session");
+      btn.title = "End session";
+    }, 2500);
   });
   document.getElementById("restartBtn").addEventListener("click", function(){
     document.body.dataset.view = "setup";
