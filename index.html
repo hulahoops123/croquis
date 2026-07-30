@@ -1,3 +1,4 @@
+<meta charset="UTF-8">
 <title>Croquis — Gesture Session Timer</title>
 <meta name="description" content="A ramp-up gesture-drawing session timer: set a total time and pacing, it builds the whole pose schedule for you.">
 <meta property="og:title" content="Croquis — Gesture Session Timer" />
@@ -433,6 +434,15 @@ details.card[open] summary::after{content:"−";}
   min-height:1.2em;
 }
 
+.pose-flag{
+  text-align:center;
+  font-size:0.72rem;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  color:var(--graphite-soft);
+  min-height:1.1em;
+}
+
 .stage-title{
   text-align:center;
   font-family:'Big Shoulders',sans-serif;
@@ -683,6 +693,7 @@ body[data-kind="prep"] .dial-time{color:var(--graphite);}
     <span class="session-clock num" id="sessionClock">00:00 / 60:00</span>
   </div>
   <div class="stage-flag" id="stageFlag">STAGE 1 OF 4</div>
+  <div class="pose-flag" id="poseFlag">&nbsp;</div>
   <div class="stage-title" id="stageTitle">Get ready</div>
   <div class="dial-wrap">
     <canvas id="dial" width="440" height="440"></canvas>
@@ -752,6 +763,10 @@ body[data-kind="prep"] .dial-time{color:var(--graphite);}
     if(sec < 60) return sec + " sec";
     var m = sec/60;
     return (m % 1 === 0 ? m : m.toFixed(1)) + (m === 1 ? " min" : " min");
+  }
+
+  function speakDuration(sec){
+    return sec<60 ? sec+" seconds" : Math.round(sec/60)+" minute"+(sec>60?"s":"");
   }
 
   function fmtClock(totalSec){
@@ -873,29 +888,37 @@ body[data-kind="prep"] .dial-time{color:var(--graphite);}
       var st = stages[i];
       var n = counts[i];
       var poseWord = n === 1 ? "POSE" : "POSES";
+      var stagePrefix = activeIdx.length > 1 ? "Stage "+(ai+1)+" of "+activeIdx.length+". " : "";
       steps.push({
         type:"prep",
         stageIndex:i,
         title:n+" "+poseWord+" OF "+fmtDuration(st.sec).toUpperCase(),
-        speech:"Prepare. "+n+" "+poseWord.toLowerCase()+" of "+fmtDuration(st.sec)+" each.",
-        sec:PREP_SEC
+        speech:"Artists and model, prepare yourselves. "+stagePrefix+n+" "+poseWord.toLowerCase()+" of "+speakDuration(st.sec)+" each.",
+        sec:PREP_SEC,
+        stagePoseTotal:n,
+        stagePoseNumber:0
       });
       for(var j=0;j<n;j++){
         steps.push({
           type:"pose",
           stageIndex:i,
           title:fmtDuration(st.sec).toUpperCase()+" — GO",
-          speech: (st.sec<60? st.sec+" seconds. Go.":Math.round(st.sec/60)+" minute"+(st.sec>60?"s":"")+". Go.") ,
-          sec:st.sec
+          speech: speakDuration(st.sec)+". Go.",
+          sec:st.sec,
+          stagePoseTotal:n,
+          stagePoseNumber:j+1
         });
         var isVeryLast = (ai === activeIdx.length-1) && (j === n-1);
         if(!isVeryLast){
+          var isStageBoundary = (j === n-1);
           steps.push({
             type:"gap",
             stageIndex:i,
-            title:"Next pose",
-            speech:"Next pose.",
-            sec:st.gap
+            title: isStageBoundary ? "Rest — new stage next" : "Next pose",
+            speech: isStageBoundary ? "Rest. A new stage is coming up." : "Next pose.",
+            sec:st.gap,
+            stagePoseTotal:n,
+            stagePoseNumber: isStageBoundary ? 0 : j+2
           });
         }
       }
@@ -1113,6 +1136,7 @@ body[data-kind="prep"] .dial-time{color:var(--graphite);}
     elapsedBase: 0,
     bellFired: false,
     speechFired: false,
+    oneMinWarnFired: false,
     lastTickSec: null,
     rafId: null
   };
@@ -1161,10 +1185,22 @@ body[data-kind="prep"] .dial-time{color:var(--graphite);}
   var dialTimeEl = document.getElementById("dialTime");
   var stageTitleEl = document.getElementById("stageTitle");
   var stageFlagEl = document.getElementById("stageFlag");
+  var poseFlagEl = document.getElementById("poseFlag");
   var nextLineEl = document.getElementById("nextLine");
   var railFill = document.getElementById("railFill");
   var sessionClock = document.getElementById("sessionClock");
   var liveRegion = document.getElementById("liveRegion");
+
+  function poseFlagText(step){
+    var total = step.stagePoseTotal;
+    if(!total) return "";
+    if(step.type === "prep"){
+      return total+(total===1?" POSE":" POSES")+" THIS STAGE";
+    }
+    if(!step.stagePoseNumber) return "";
+    var left = total - step.stagePoseNumber;
+    return "POSE "+step.stagePoseNumber+" OF "+total+(left>0 ? " — "+left+" LEFT" : " — LAST ONE");
+  }
 
   function stageNumberFor(index){
     var s = runtime.steps[index];
@@ -1197,17 +1233,20 @@ body[data-kind="prep"] .dial-time{color:var(--graphite);}
     runtime.stepDurationMs = step.sec*1000;
     runtime.bellFired = false;
     runtime.speechFired = false;
+    runtime.oneMinWarnFired = false;
     runtime.lastTickSec = null;
     runtime.elapsedBase = elapsedBeforeStep(index);
 
     document.body.dataset.kind = step.type;
     stageTitleEl.textContent = step.title;
     stageFlagEl.textContent = "STAGE "+stageNumberFor(index)+" OF "+totalStages();
+    var poseFlagText_ = poseFlagText(step);
+    poseFlagEl.textContent = poseFlagText_ || " ";
 
     var next = runtime.steps[index+1];
     nextLineEl.innerHTML = next ? "NEXT — <strong>"+next.title.toLowerCase()+"</strong>" : "Final step";
 
-    liveRegion.textContent = step.title;
+    liveRegion.textContent = step.title + (poseFlagText_ ? ". "+poseFlagText_ : "");
     speak(step.speech);
 
     drawDial(1, step.type);
@@ -1234,6 +1273,12 @@ body[data-kind="prep"] .dial-time{color:var(--graphite);}
     if(!runtime.bellFired && remainSec <= 0.08){
       runtime.bellFired = true;
       playBell();
+    }
+
+    var currentStep = runtime.steps[runtime.index];
+    if(!runtime.oneMinWarnFired && currentStep.type === "pose" && currentStep.sec > 300 && remainSec <= 60){
+      runtime.oneMinWarnFired = true;
+      speak("One minute remaining.");
     }
 
     var elapsedTotal = runtime.elapsedBase + (elapsedMs/1000);
