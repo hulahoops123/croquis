@@ -1099,9 +1099,17 @@ body[data-kind="prep"] .dial-time{color:var(--graphite);}
     if(!("speechSynthesis" in window)) return;
     try{
       window.speechSynthesis.cancel();
-      var u = new SpeechSynthesisUtterance(text);
-      u.rate = 1.0;
-      window.speechSynthesis.speak(u);
+      /* Some mobile TTS engines (e.g. Android Chrome) ignore embedded
+         sentence punctuation as a pause cue and run text together.
+         Queuing separate utterances forces a real gap on every platform. */
+      var parts = text.split(". ");
+      parts.forEach(function(p, i){
+        if(!p) return;
+        var sentence = (i < parts.length-1) ? p+"." : p;
+        var u = new SpeechSynthesisUtterance(sentence);
+        u.rate = 1.0;
+        window.speechSynthesis.speak(u);
+      });
     }catch(e){}
   }
 
