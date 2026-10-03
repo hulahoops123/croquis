@@ -1,8 +1,8 @@
 <meta charset="UTF-8">
 <title>Croquis — Gesture Session Timer</title>
-<meta name="description" content="A ramp-up gesture-drawing session timer: set a total time and pacing, it builds the whole pose schedule for you.">
+<meta name="description" content="A gesture-drawing class timer: ramp-up poses before tea, the tea break, and long poses after. It builds the whole schedule for you.">
 <meta property="og:title" content="Croquis — Gesture Session Timer" />
-<meta property="og:description" content="A ramp-up gesture-drawing session timer. Set a total time and pacing, it builds the whole pose schedule for you." />
+<meta property="og:description" content="A gesture-drawing class timer: ramp-up poses before tea, the tea break, and long poses after. It builds the whole schedule for you." />
 <meta property="og:image" content="https://hulahoops123.github.io/croquis/og-preview.png" />
 <meta property="og:url" content="https://hulahoops123.github.io/croquis/" />
 <meta property="og:type" content="website" />
@@ -137,6 +137,24 @@ body[data-view="done"] #view-done{display:flex;}
   line-height:0.9;
 }
 .wordmark span{color:var(--sanguine);}
+.theme-btn{
+  margin-left:auto;
+  flex:none;
+  width:2.75rem;
+  height:2.75rem;
+  border-radius:50%;
+  border:1px solid var(--line);
+  background:var(--paper-raised);
+  color:var(--ink);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  transition:border-color 0.15s;
+}
+.theme-btn:hover{border-color:var(--sanguine);}
+.theme-btn:focus-visible{outline:2px solid var(--sanguine); outline-offset:2px;}
+.theme-btn svg{width:1.25rem; height:1.25rem;}
 .tagline{
   color:var(--graphite);
   font-size:0.95rem;
@@ -204,6 +222,57 @@ body[data-view="done"] #view-done{display:flex;}
   letter-spacing:0.06em;
   display:block;
   margin-top:0.4rem;
+}
+
+/* three part timers: before tea / tea / after tea */
+.time-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:0.75rem;
+  padding:0.75rem 0;
+  border-top:1px solid var(--line);
+  transition:opacity 0.15s;
+}
+.time-row:first-of-type{border-top:none; padding-top:0;}
+.time-row[data-inactive="true"]{opacity:0.45;}
+.time-row-label{
+  font-family:'Big Shoulders',sans-serif;
+  font-weight:800;
+  font-size:1.25rem;
+  letter-spacing:0.01em;
+}
+.time-row-label small{
+  display:block;
+  font-family:'Work Sans',sans-serif;
+  font-weight:400;
+  font-size:0.72rem;
+  color:var(--graphite);
+  letter-spacing:0;
+  margin-top:0.15rem;
+}
+.time-row .time-stepper{gap:0.6rem;}
+.time-row .stepper-btn{width:2.5rem; height:2.5rem; font-size:1.25rem;}
+.time-row .time-display{font-size:2.1rem; min-width:3.6rem;}
+.time-row .time-display .unit{font-size:0.62rem; margin-top:0.2rem;}
+.time-total{
+  display:flex;
+  justify-content:space-between;
+  align-items:baseline;
+  border-top:1px solid var(--line);
+  padding-top:0.75rem;
+  font-size:0.72rem;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  color:var(--graphite);
+  font-weight:600;
+}
+.time-total strong{
+  font-family:'Big Shoulders',sans-serif;
+  font-weight:800;
+  font-size:1rem;
+  color:var(--ink);
+  letter-spacing:0.02em;
 }
 
 /* preset segmented control */
@@ -425,23 +494,19 @@ details.card[open] summary::after{content:"−";}
 }
 
 .stage-flag{
-  text-align:center;
-  font-size:0.78rem;
-  letter-spacing:0.1em;
+  display:flex;
+  justify-content:center;
+  gap:1.4em;
+  font-family:'Big Shoulders',sans-serif;
+  font-weight:800;
+  font-size:clamp(1.35rem,5.5vw,1.9rem);
+  letter-spacing:0.05em;
   text-transform:uppercase;
-  color:var(--graphite);
-  margin-top:1.4rem;
+  color:var(--ink);
+  margin-top:1.2rem;
   min-height:1.2em;
 }
-
-.pose-flag{
-  text-align:center;
-  font-size:0.72rem;
-  letter-spacing:0.08em;
-  text-transform:uppercase;
-  color:var(--graphite-soft);
-  min-height:1.1em;
-}
+.stage-flag .flag-key{color:var(--graphite);}
 
 .stage-title{
   text-align:center;
@@ -523,6 +588,7 @@ details.card[open] summary::after{content:"−";}
 
 body[data-kind="gap"] .dial-time{color:var(--graphite);}
 body[data-kind="prep"] .dial-time{color:var(--graphite);}
+body[data-kind="tea"] .dial-time{color:var(--graphite);}
 
 /* ---------- done view ---------- */
 #view-done{
@@ -586,20 +652,44 @@ body[data-kind="prep"] .dial-time{color:var(--graphite);}
       <path d="M256.1,261.4 C214.1,294.4 190.1,339.4 199.1,378.4" stroke="currentColor" stroke-width="18" stroke-linecap="round"></path>
     </svg>
     <div class="wordmark">CROQUIS<span>.</span></div>
+    <button class="theme-btn" id="themeBtn" type="button" aria-label="Switch to night mode" title="Day / night">
+      <svg id="iconMoon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z"></path></svg>
+      <svg id="iconSun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="display:none;"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>
+    </button>
   </div>
   <div class="tagline">gesture session timer</div>
 
   <div class="card">
-    <span class="field-label">Total session</span>
-    <div class="time-stepper">
-      <button class="stepper-btn" id="timeMinus" aria-label="Decrease total time by 5 minutes">−</button>
-      <div class="time-display"><span id="timeValue" class="num">60</span><span class="unit">minutes</span></div>
-      <button class="stepper-btn" id="timePlus" aria-label="Increase total time by 5 minutes">+</button>
+    <span class="field-label">Session</span>
+    <div class="time-row" data-part="before">
+      <span class="time-row-label">Before tea<small class="num" data-times>&nbsp;</small></span>
+      <div class="time-stepper">
+        <button class="stepper-btn" data-step="-5" aria-label="Decrease before-tea time by 5 minutes">−</button>
+        <div class="time-display"><span class="num" data-value>90</span><span class="unit">min</span></div>
+        <button class="stepper-btn" data-step="5" aria-label="Increase before-tea time by 5 minutes">+</button>
+      </div>
     </div>
+    <div class="time-row" data-part="tea">
+      <span class="time-row-label">Tea<small class="num" data-times>&nbsp;</small></span>
+      <div class="time-stepper">
+        <button class="stepper-btn" data-step="-5" aria-label="Decrease tea time by 5 minutes">−</button>
+        <div class="time-display"><span class="num" data-value>40</span><span class="unit">min</span></div>
+        <button class="stepper-btn" data-step="5" aria-label="Increase tea time by 5 minutes">+</button>
+      </div>
+    </div>
+    <div class="time-row" data-part="after">
+      <span class="time-row-label">After tea<small class="num" data-times>&nbsp;</small></span>
+      <div class="time-stepper">
+        <button class="stepper-btn" data-step="-5" aria-label="Decrease after-tea time by 5 minutes">−</button>
+        <div class="time-display"><span class="num" data-value>50</span><span class="unit">min</span></div>
+        <button class="stepper-btn" data-step="5" aria-label="Increase after-tea time by 5 minutes">+</button>
+      </div>
+    </div>
+    <div class="time-total"><span>Total <strong class="num" id="timeTotal">3 hr</strong></span><span>Finish <strong class="num" id="timeFinish">&nbsp;</strong></span></div>
   </div>
 
   <div class="card">
-    <span class="field-label">Pacing</span>
+    <span class="field-label">Pacing before tea</span>
     <div class="presets" role="group" aria-label="Session pacing">
       <button class="preset-btn" data-preset="short" aria-pressed="false">
         <span class="preset-name">Short</span>
@@ -615,6 +705,24 @@ body[data-kind="prep"] .dial-time{color:var(--graphite);}
         <span class="preset-name">Longer</span>
         <span class="preset-desc">Brief warm-up, mostly long study poses</span>
         <span class="preset-bar" id="bar-longer"></span>
+      </button>
+    </div>
+  </div>
+
+  <div class="card" id="afterCard">
+    <span class="field-label">Pacing after tea</span>
+    <div class="presets" role="group" aria-label="Long pose pacing after tea">
+      <button class="preset-btn" data-after-preset="short" aria-pressed="false">
+        <span class="preset-name">Short</span>
+        <span class="preset-desc" id="afterDesc-short">More poses, around 10 min</span>
+      </button>
+      <button class="preset-btn" data-after-preset="balanced" aria-pressed="true">
+        <span class="preset-name">Balanced</span>
+        <span class="preset-desc" id="afterDesc-balanced">Around 20 min poses</span>
+      </button>
+      <button class="preset-btn" data-after-preset="longer" aria-pressed="false">
+        <span class="preset-name">Longer</span>
+        <span class="preset-desc" id="afterDesc-longer">Fewer, 30 min+ poses</span>
       </button>
     </div>
   </div>
@@ -665,17 +773,6 @@ body[data-kind="prep"] .dial-time{color:var(--graphite);}
           <span class="track"></span><span class="thumb"></span>
         </label>
       </div>
-      <div class="toggle-row">
-        <span>Theme</span>
-        <span style="display:flex; align-items:center; gap:0.5rem; color:var(--graphite);">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path></svg>
-          <label class="switch">
-            <input type="checkbox" id="toggleDark">
-            <span class="track"></span><span class="thumb"></span>
-          </label>
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z"></path></svg>
-        </span>
-      </div>
       <div class="toggle-row" id="installRow" style="display:none;">
         <span>Install app</span>
         <button id="installBtn" type="button" style="background:var(--sanguine); color:#fff; border:none; border-radius:4px; padding:0.45rem 0.9rem; font-family:'Big Shoulders',sans-serif; font-weight:800; font-size:0.85rem; letter-spacing:0.02em; text-transform:uppercase; cursor:pointer;">Install</button>
@@ -692,8 +789,7 @@ body[data-kind="prep"] .dial-time{color:var(--graphite);}
     <span class="session-mark">CROQUIS</span>
     <span class="session-clock num" id="sessionClock">00:00 / 60:00</span>
   </div>
-  <div class="stage-flag" id="stageFlag">STAGE 1 OF 4</div>
-  <div class="pose-flag" id="poseFlag">&nbsp;</div>
+  <div class="stage-flag num" id="stageFlag">&nbsp;</div>
   <div class="stage-title" id="stageTitle">Get ready</div>
   <div class="dial-wrap">
     <canvas id="dial" width="440" height="440"></canvas>
@@ -759,6 +855,15 @@ body[data-kind="prep"] .dial-time{color:var(--graphite);}
   var PREP_SEC = 15;
   var MAX_POSES_PER_STAGE = 10;
 
+  /* After tea is long poses only: the same ramp idea as before tea, but on
+     5-minute steps from 10 to 40 min. 7 tiers, so the before-tea pacing
+     weights line up with them one-to-one for rest percentages. */
+  var LONG_STAGE_MINUTES = [10, 15, 20, 25, 30, 35, 40];
+  /* Extra time on the very first prep so the spoken welcome overview fits
+     before the first pose starts. */
+  var WELCOME_EXTRA_SEC = 15;
+  var TEA_WARN_SEC = 300;
+
   function fmtDuration(sec){
     if(sec < 60) return sec + " sec";
     var m = sec/60;
@@ -771,19 +876,46 @@ body[data-kind="prep"] .dial-time{color:var(--graphite);}
 
   function fmtClock(totalSec){
     totalSec = Math.max(0, Math.round(totalSec));
-    var m = Math.floor(totalSec/60);
+    var h = Math.floor(totalSec/3600);
+    var m = Math.floor((totalSec%3600)/60);
     var s = totalSec % 60;
-    return (m<10?"0":"")+m+":"+(s<10?"0":"")+s;
+    var mmss = (m<10?"0":"")+m+":"+(s<10?"0":"")+s;
+    return h ? h+":"+mmss : mmss;
+  }
+
+  function fmtHoursMinutes(min){
+    var h = Math.floor(min/60), m = min % 60;
+    if(!h) return m+" min";
+    return h+" hr"+(m ? " "+m+" min" : "");
+  }
+
+  /* Wall-clock time as it should be spoken, rounded to 5 minutes:
+     "11 o'clock", "10:55". */
+  function speakClockTime(date){
+    var d = new Date(Math.round(date.getTime()/300000)*300000);
+    var h = d.getHours() % 12 || 12;
+    var m = d.getMinutes();
+    return m === 0 ? h+" o'clock" : h+":"+(m<10?"0":"")+m;
+  }
+
+  /* Rests over a minute are rounded to whole minutes (a "2.2 min" rest is
+     odd to read and to time), and no rest runs longer than 2 minutes. */
+  var MAX_REST_SEC = 120;
+  function cleanGap(sec){
+    if(sec < 60) return Math.round(sec);
+    return Math.min(MAX_REST_SEC, Math.round(sec/60)*60);
   }
 
   function currentStages(restStyle){
     var pcts = REST_PRESETS[restStyle] || REST_PRESETS.generous;
     return DEFAULT_STAGES.map(function(st, i){
-      return {label:st.label, sec:st.sec, gap:Math.round(st.sec*pcts[i]/100)};
+      return {label:st.label, sec:st.sec, gap:cleanGap(st.sec*pcts[i]/100)};
     });
   }
 
-  function buildSchedule(totalMinutes, presetKey, stages){
+  /* opts is passed through to stepsFromCounts (stage numbering, kettle cue). */
+  function buildSchedule(totalMinutes, presetKey, stages, opts){
+    opts = opts || {};
     var weights = PRESETS[presetKey].weights;
     var totalSec = totalMinutes * 60;
     /* Seed each weighted stage from its ideal share of the total, but allow
@@ -881,19 +1013,37 @@ body[data-kind="prep"] .dial-time{color:var(--graphite);}
       }
     }
 
-    var activeIdx = activeIndices();
+    return stepsFromCounts(stages, counts, opts);
+  }
+
+  /* Turn per-tier pose counts into prep / pose / rest steps.
+     opts.stageOffset / opts.stageTotal: where this block sits in the
+     session's "Stage X of Y" numbering.
+     opts.teaNext: the block ends in tea, so its last stage gets the kettle cue.
+     opts.intro: spoken before the first prep (e.g. "Welcome back.").
+     opts.keyPrefix: keeps this block's stage keys distinct from another's. */
+  function stepsFromCounts(stages, counts, opts){
+    opts = opts || {};
+    var activeIdx = [];
+    counts.forEach(function(n,i){ if(n>0) activeIdx.push(i); });
+    var offset = opts.stageOffset || 0;
+    var stageTotal = opts.stageTotal || activeIdx.length;
+    var keyPrefix = opts.keyPrefix || "";
 
     var steps = [];
     activeIdx.forEach(function(i, ai){
       var st = stages[i];
       var n = counts[i];
+      var key = keyPrefix+i;
       var poseWord = n === 1 ? "POSE" : "POSES";
-      var stagePrefix = activeIdx.length > 1 ? "Stage "+(ai+1)+" of "+activeIdx.length+". " : "";
+      var stagePrefix = stageTotal > 1 ? "Stage "+(offset+ai+1)+" of "+stageTotal+". " : "";
+      var intro = (ai === 0 && opts.intro) ? opts.intro+" " : "";
+      var kettle = (opts.teaNext && ai === activeIdx.length-1) ? "Last stage before tea. Someone get the kettle on! " : "";
       steps.push({
         type:"prep",
-        stageIndex:i,
+        stageIndex:key,
         title:n+" "+poseWord+" OF "+fmtDuration(st.sec).toUpperCase(),
-        speech:"Artists and model, prepare yourselves. "+stagePrefix+n+" "+poseWord.toLowerCase()+" of "+speakDuration(st.sec)+" each.",
+        speech:intro+kettle+"Artists and model, prepare yourselves. "+stagePrefix+n+" "+poseWord.toLowerCase()+" of "+speakDuration(st.sec)+(n === 1 ? "." : " each."),
         sec:PREP_SEC,
         stagePoseTotal:n,
         stagePoseNumber:0
@@ -901,7 +1051,7 @@ body[data-kind="prep"] .dial-time{color:var(--graphite);}
       for(var j=0;j<n;j++){
         steps.push({
           type:"pose",
-          stageIndex:i,
+          stageIndex:key,
           title:fmtDuration(st.sec).toUpperCase()+" — GO",
           speech: speakDuration(st.sec)+". Go.",
           sec:st.sec,
@@ -913,7 +1063,7 @@ body[data-kind="prep"] .dial-time{color:var(--graphite);}
           var isStageBoundary = (j === n-1);
           steps.push({
             type:"gap",
-            stageIndex:i,
+            stageIndex:key,
             title: isStageBoundary ? "Rest — new stage next" : "Next pose",
             speech: isStageBoundary ? "Rest. A new stage is coming up." : "Next pose.",
             sec:st.gap,
@@ -928,12 +1078,181 @@ body[data-kind="prep"] .dial-time{color:var(--graphite);}
     return {steps:steps, actualTotal:actualTotal, stageCount:activeIdx.length, poseCount: steps.filter(function(s){return s.type==="pose";}).length};
   }
 
+  function longStages(restStyle){
+    var pcts = REST_PRESETS[restStyle] || REST_PRESETS.generous;
+    return LONG_STAGE_MINUTES.map(function(m, i){
+      var sec = m*60;
+      return {label:m+" MIN", sec:sec, gap:cleanGap(sec*pcts[i]/100)};
+    });
+  }
+
+  /* Average pose length each after-tea pacing aims for, in minutes. */
+  var AFTER_TARGET_MIN = {short:15, balanced:22.5, longer:32.5};
+
+  /* After-tea poses run 10-40 min, so the before-tea weighting (which leans
+     on lots of short poses to land near the target) overshoots by whole
+     poses here — and after tea runs to the end of class, so it must never
+     run over. Instead, try every ramp of adjacent tiers that fits the time
+     and pick the best: average pose length close to the pacing's target,
+     little time left unused, and a real ramp (2-3 lengths) over repeats. */
+  function planLongRamp(totalMinutes, presetKey, stages){
+    var total = totalMinutes*60;
+    var target = AFTER_TARGET_MIN[presetKey] || AFTER_TARGET_MIN.balanced;
+    var best = null, bestScore = -Infinity;
+    var counts = stages.map(function(){ return 0; });
+
+    function evaluate(){
+      var first = -1, last = -1, n = 0, poseSec = 0, used = 0;
+      for(var i=0;i<counts.length;i++){
+        if(!counts[i]) continue;
+        if(first === -1) first = i;
+        else if(i !== last+1) return; // not a ramp of adjacent tiers
+        last = i;
+        n += counts[i];
+        poseSec += counts[i]*stages[i].sec;
+        used += PREP_SEC + counts[i]*(stages[i].sec + stages[i].gap);
+      }
+      if(!n) return;
+      used -= stages[last].gap; // no rest after the very last pose
+      if(used > total) return;
+      var distinct = last-first+1;
+      var score = -Math.abs(poseSec/n/60 - target)/5
+                  - 0.1*(total-used)/60
+                  + 0.3*Math.min(distinct-1, 2);
+      if(score > bestScore){ bestScore = score; best = counts.slice(); }
+    }
+
+    (function walk(i, budget){
+      if(i === stages.length){ evaluate(); return; }
+      for(var c=0; c<=MAX_POSES_PER_STAGE && c*stages[i].sec <= budget; c++){
+        counts[i] = c;
+        walk(i+1, budget - c*stages[i].sec);
+      }
+      counts[i] = 0;
+    })(0, total);
+
+    /* Not even one 10 min pose fits: give one pose of the shortest tier. */
+    if(!best){ best = counts.slice(); best[0] = 1; }
+    return best;
+  }
+
+  /* Put a cue just before `poseIdx`: on the preceding rest/prep if it's long
+     enough to be heard before the pose starts, otherwise at the start of the
+     pose itself. */
+  function cueBeforePose(steps, poseIdx, line){
+    var prev = steps[poseIdx-1];
+    if(prev && prev.sec >= 5 && prev.type === "gap"){
+      prev.speech = prev.speech.replace(/Next pose\.$/, line);
+    }else if(prev && prev.sec >= 5 && prev.type === "prep"){
+      prev.speech += " "+line;
+    }else{
+      steps[poseIdx].speech = line+" "+steps[poseIdx].speech;
+    }
+  }
+
+  /* The whole class: ramp-up poses before tea, tea, then long poses.
+     cfg: {before, tea, after (minutes), preset, afterPreset, restStyle}.
+     startDate (optional) lets the welcome say what time tea is. */
+  function buildDay(cfg, startDate){
+    var hasAfter = cfg.after > 0;
+    var hasTea = hasAfter && cfg.tea > 0;
+
+    var stages = currentStages(cfg.restStyle);
+    var lStages = hasAfter ? longStages(cfg.restStyle) : null;
+    var longCounts = hasAfter ? planLongRamp(cfg.after, cfg.afterPreset, lStages) : null;
+
+    /* Build once to learn each block's stage count, so both can number
+       their stages across the whole session. */
+    var ramp = buildSchedule(cfg.before, cfg.preset, stages);
+    var long = hasAfter ? stepsFromCounts(lStages, longCounts) : null;
+    var stageTotal = ramp.stageCount + (long ? long.stageCount : 0);
+    ramp = buildSchedule(cfg.before, cfg.preset, stages, {stageTotal:stageTotal, teaNext:hasTea});
+
+    var steps = ramp.steps;
+    var lastRampPoseIdx = steps.length-1;
+
+    if(hasTea){
+      var teaSec = cfg.tea*60;
+      steps.push({
+        type:"tea",
+        stageIndex:"tea",
+        title:"Enjoy your tea",
+        speech:"Time for tea! Enjoy it, we'll be back in "+speakDuration(teaSec)+".",
+        sec:teaSec,
+        warnAt: teaSec > TEA_WARN_SEC ? TEA_WARN_SEC : 0,
+        warnSpeech:"Five more minutes of tea. Finish up and get comfy, the long poses are next."
+      });
+    }
+
+    if(hasAfter){
+      long = stepsFromCounts(lStages, longCounts, {
+        stageOffset:ramp.stageCount,
+        stageTotal:stageTotal,
+        keyPrefix:"after-",
+        intro: hasTea ? "Welcome back." : ""
+      });
+      long.poseLengths = [];
+      long.steps.forEach(function(s){ if(s.type === "pose") long.poseLengths.push(s.sec); });
+      steps = steps.concat(long.steps);
+    }
+
+    /* Cue the last pose before tea and the final pose of the day. Final pose
+       first: if there's no after-tea part they're the same pose. */
+    var finalPoseIdx = steps.length-1;
+    cueBeforePose(steps, finalPoseIdx, "Artists and model, this is your last pose.");
+    if(hasTea) cueBeforePose(steps, lastRampPoseIdx, "Last pose before tea.");
+
+    if(startDate){
+      var hour = startDate.getHours();
+      var greeting = hour < 12 ? "Good morning." : hour < 17 ? "Good afternoon." : "Good evening.";
+      var overview;
+      if(hasAfter){
+        var lens = long.poseLengths;
+        var longDesc = lens.length === 1
+          ? "one long pose of "+speakDuration(lens[0])
+          : lens[0] === lens[lens.length-1]
+            ? lens.length+" long poses of "+speakDuration(lens[0])
+            : lens.length+" long poses, building from "+speakDuration(lens[0])+" to "+speakDuration(lens[lens.length-1]);
+        if(hasTea){
+          var teaAt = new Date(startDate.getTime() + (ramp.actualTotal + WELCOME_EXTRA_SEC)*1000);
+          overview = "Today we'll draw for "+speakDuration(cfg.before*60)+", with tea at around "+speakClockTime(teaAt)+". After tea, "+longDesc+" to finish.";
+        }else{
+          overview = "Today we'll draw for "+speakDuration(cfg.before*60)+", then finish with "+longDesc+".";
+        }
+      }else{
+        overview = "Today we'll draw for "+speakDuration(cfg.before*60)+". "+ramp.poseCount+" poses across "+ramp.stageCount+(ramp.stageCount===1?" stage.":" stages.");
+      }
+      steps[0].speech = greeting+" Welcome. "+overview+" "+steps[0].speech;
+      steps[0].sec += WELCOME_EXTRA_SEC;
+    }
+
+    var actualTotal = steps.reduce(function(a,s){return a+s.sec;},0);
+    return {
+      steps:steps,
+      actualTotal:actualTotal,
+      stageCount:stageTotal,
+      poseCount:steps.filter(function(s){return s.type==="pose";}).length,
+      rampPoseCount:ramp.poseCount,
+      long:long,
+      hasTea:hasTea,
+      teaSec:hasTea ? cfg.tea*60 : 0
+    };
+  }
+
   /* ---------------- setup view wiring ---------------- */
 
   var state = {
-    totalMinutes: 60,
+    before: 90,
+    tea: 40,
+    after: 50,
+    afterPreset: "balanced",
     preset: "balanced",
     restStyle: "generous"
+  };
+  var PART_LIMITS = {
+    before: {min:15, max:150},
+    tea:    {min:0,  max:60},
+    after:  {min:0,  max:120}
   };
 
   function renderBars(){
@@ -952,19 +1271,30 @@ body[data-kind="prep"] .dial-time{color:var(--graphite);}
   }
   renderBars();
 
-  var timeValue = document.getElementById("timeValue");
-  document.getElementById("timeMinus").addEventListener("click", function(){
-    state.totalMinutes = Math.max(15, state.totalMinutes-5);
-    timeValue.textContent = state.totalMinutes;
-    updatePreview();
-  });
-  document.getElementById("timePlus").addEventListener("click", function(){
-    state.totalMinutes = Math.min(150, state.totalMinutes+5);
-    timeValue.textContent = state.totalMinutes;
-    updatePreview();
+  document.querySelectorAll(".time-row").forEach(function(row){
+    var part = row.dataset.part;
+    var valueEl = row.querySelector("[data-value]");
+    row.querySelectorAll("[data-step]").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        var lim = PART_LIMITS[part];
+        state[part] = Math.max(lim.min, Math.min(lim.max, state[part] + Number(btn.dataset.step)));
+        valueEl.textContent = state[part];
+        updatePreview();
+      });
+    });
   });
 
-  var presetBtns = document.querySelectorAll(".presets:not(.rest-presets) .preset-btn");
+  var afterBtns = document.querySelectorAll("[data-after-preset]");
+  afterBtns.forEach(function(btn){
+    btn.addEventListener("click", function(){
+      afterBtns.forEach(function(b){ b.setAttribute("aria-pressed","false"); });
+      btn.setAttribute("aria-pressed","true");
+      state.afterPreset = btn.dataset.afterPreset;
+      updatePreview();
+    });
+  });
+
+  var presetBtns = document.querySelectorAll("[data-preset]");
   presetBtns.forEach(function(btn){
     btn.addEventListener("click", function(){
       presetBtns.forEach(function(b){ b.setAttribute("aria-pressed","false"); });
@@ -974,7 +1304,7 @@ body[data-kind="prep"] .dial-time{color:var(--graphite);}
     });
   });
 
-  var restBtns = document.querySelectorAll(".rest-presets .preset-btn");
+  var restBtns = document.querySelectorAll("[data-rest]");
   restBtns.forEach(function(btn){
     btn.addEventListener("click", function(){
       restBtns.forEach(function(b){ b.setAttribute("aria-pressed","false"); });
@@ -986,23 +1316,28 @@ body[data-kind="prep"] .dial-time{color:var(--graphite);}
 
   (function themeControl(){
     var THEME_KEY = "croquis-theme";
-    var checkbox = document.getElementById("toggleDark");
+    var btn = document.getElementById("themeBtn");
     var mql = window.matchMedia("(prefers-color-scheme: dark)");
-    var saved = null;
-    try{ saved = localStorage.getItem(THEME_KEY); }catch(e){}
 
-    checkbox.checked = saved ? saved === "dark" : mql.matches;
-
-    if(!saved && mql.addEventListener){
-      mql.addEventListener("change", function(e){
-        checkbox.checked = e.matches;
-      });
+    function isDark(){
+      var t = document.documentElement.dataset.theme;
+      return t ? t === "dark" : mql.matches;
     }
+    function render(){
+      var dark = isDark();
+      document.getElementById("iconSun").style.display = dark ? "block" : "none";
+      document.getElementById("iconMoon").style.display = dark ? "none" : "block";
+      btn.setAttribute("aria-label", dark ? "Switch to day mode" : "Switch to night mode");
+    }
+    render();
 
-    checkbox.addEventListener("change", function(){
-      var choice = checkbox.checked ? "dark" : "light";
+    if(mql.addEventListener) mql.addEventListener("change", render);
+
+    btn.addEventListener("click", function(){
+      var choice = isDark() ? "light" : "dark";
       document.documentElement.dataset.theme = choice;
       try{ localStorage.setItem(THEME_KEY, choice); }catch(e){}
+      render();
     });
   })();
 
@@ -1013,10 +1348,11 @@ body[data-kind="prep"] .dial-time{color:var(--graphite);}
     var current = null;
     steps.forEach(function(s){
       if(!current || current.stageIndex !== s.stageIndex){
-        current = {stageIndex:s.stageIndex, prepSec:0, poseCount:0, poseSec:0, gapCount:0, gapSec:0};
+        current = {stageIndex:s.stageIndex, prepSec:0, poseCount:0, poseSec:0, gapCount:0, gapSec:0, teaSec:0};
         groups.push(current);
       }
-      if(s.type === "prep") current.prepSec += s.sec;
+      if(s.type === "tea") current.teaSec += s.sec;
+      else if(s.type === "prep") current.prepSec += s.sec;
       else if(s.type === "pose"){ current.poseCount++; current.poseSec = s.sec; }
       else if(s.type === "gap"){ current.gapCount++; current.gapSec = s.sec; }
     });
@@ -1026,11 +1362,21 @@ body[data-kind="prep"] .dial-time{color:var(--graphite);}
   function renderBreakdown(sched){
     var groups = stageSummaries(sched.steps);
     var html = "";
-    groups.forEach(function(g, idx){
+    var stageNo = 0;
+    groups.forEach(function(g){
+      if(g.stageIndex === "tea"){
+        html += '<div class="breakdown-row">'+
+          '<div class="bd-stage">Tea — '+fmtDuration(g.teaSec).toUpperCase()+'</div>'+
+          '<div class="bd-detail">Spoken reminder 5 min before the end</div>'+
+          '<div class="bd-subtotal num">'+fmtClock(g.teaSec)+'</div>'+
+          '</div>';
+        return;
+      }
+      stageNo++;
       var subtotal = g.prepSec + g.poseCount*g.poseSec + g.gapCount*g.gapSec;
       var gapNote = g.gapCount ? (", "+fmtDuration(g.gapSec)+" between poses") : "";
       html += '<div class="breakdown-row">'+
-        '<div class="bd-stage">Stage '+(idx+1)+' — '+fmtDuration(g.poseSec).toUpperCase()+' poses</div>'+
+        '<div class="bd-stage">Stage '+stageNo+' — '+fmtDuration(g.poseSec).toUpperCase()+(String(g.stageIndex).indexOf("after-") === 0 ? ' long poses' : ' poses')+'</div>'+
         '<div class="bd-detail">'+g.prepSec+'s prep cue, then '+g.poseCount+' × '+fmtDuration(g.poseSec)+gapNote+'</div>'+
         '<div class="bd-subtotal num">'+fmtClock(subtotal)+'</div>'+
         '</div>';
@@ -1039,12 +1385,76 @@ body[data-kind="prep"] .dial-time{color:var(--graphite);}
     document.getElementById("breakdownTable").innerHTML = html;
   }
 
+  /* e.g. "20 → 25 min", "2×20 → 25 min", "One 40 min pose" */
+  function describeLongRamp(counts){
+    var parts = [], total = 0;
+    counts.forEach(function(n, i){
+      if(!n) return;
+      total += n;
+      parts.push((n > 1 ? n+"×" : "")+LONG_STAGE_MINUTES[i]);
+    });
+    if(total === 1) return "One "+parts[0]+" min pose";
+    return parts.join(" → ")+" min";
+  }
+
+  function fmtTimeOfDay(date){
+    return date.toLocaleTimeString([], {hour:"numeric", minute:"2-digit"});
+  }
+
+  /* Show when each part would start and end if you pressed Start right now. */
+  function renderClockTimes(sched, now){
+    var acc = 0, teaStart = null, teaEnd = null, afterStart = null;
+    sched.steps.forEach(function(s){
+      if(s.type === "tea"){ teaStart = acc; teaEnd = acc+s.sec; }
+      if(afterStart === null && String(s.stageIndex).indexOf("after-") === 0) afterStart = acc;
+      acc += s.sec;
+    });
+    var beforeEnd = teaStart !== null ? teaStart : afterStart !== null ? afterStart : acc;
+    function at(sec){ return fmtTimeOfDay(new Date(now.getTime() + sec*1000)); }
+    function range(a, b){ return at(a)+" – "+at(b); }
+
+    var rows = {
+      before: range(0, beforeEnd),
+      tea:    teaStart !== null ? range(teaStart, teaEnd) : (state.after > 0 ? "No tea" : "Needs after-tea time"),
+      after:  afterStart !== null ? range(afterStart, acc) : "Off"
+    };
+    Object.keys(rows).forEach(function(part){
+      document.querySelector('.time-row[data-part="'+part+'"] [data-times]').textContent = rows[part];
+    });
+    document.getElementById("timeFinish").textContent = at(acc);
+  }
+
   function updatePreview(){
-    var sched = buildSchedule(state.totalMinutes, state.preset, currentStages(state.restStyle));
-    previewLine.innerHTML = "≈ <strong>"+sched.poseCount+"</strong> poses across <strong>"+sched.stageCount+"</strong> stages · finishes around <strong>"+fmtClock(sched.actualTotal)+"</strong>";
+    var hasAfter = state.after > 0;
+    document.querySelector('.time-row[data-part="tea"]').dataset.inactive = hasAfter ? "false" : "true";
+    document.getElementById("afterCard").style.display = hasAfter ? "" : "none";
+    document.getElementById("timeTotal").textContent =
+      fmtHoursMinutes(state.before + (hasAfter ? state.tea + state.after : 0));
+
+    if(hasAfter){
+      var lStages = longStages(state.restStyle);
+      Object.keys(AFTER_TARGET_MIN).forEach(function(key){
+        var counts = planLongRamp(state.after, key, lStages);
+        document.getElementById("afterDesc-"+key).textContent = describeLongRamp(counts);
+      });
+    }
+
+    var now = new Date();
+    var sched = buildDay(state, now);
+    renderClockTimes(sched, now);
+    var html = "≈ <strong>"+sched.rampPoseCount+"</strong> poses"+(sched.long ? " before tea" : "");
+    if(sched.hasTea) html += " · <strong>"+fmtDuration(sched.teaSec)+"</strong> tea";
+    if(sched.long) html += " · <strong>"+sched.long.poseCount+"</strong> long "+(sched.long.poseCount === 1 ? "pose" : "poses")+" after";
+    html += " · runs <strong>"+fmtClock(sched.actualTotal)+"</strong>";
+    previewLine.innerHTML = html;
     renderBreakdown(sched);
   }
   updatePreview();
+
+  /* Keep the clock times current while the setup screen is open. */
+  setInterval(function(){
+    if(document.body.dataset.view === "setup") updatePreview();
+  }, 30000);
 
   /* ---------------- audio ---------------- */
 
@@ -1102,10 +1512,10 @@ body[data-kind="prep"] .dial-time{color:var(--graphite);}
       /* Some mobile TTS engines (e.g. Android Chrome) ignore embedded
          sentence punctuation as a pause cue and run text together.
          Queuing separate utterances forces a real gap on every platform. */
-      var parts = text.split(". ");
-      parts.forEach(function(p, i){
-        if(!p) return;
-        var sentence = (i < parts.length-1) ? p+"." : p;
+      var parts = text.match(/[^.!?]+[.!?]*/g) || [];
+      parts.forEach(function(p){
+        var sentence = p.trim();
+        if(!sentence) return;
         var u = new SpeechSynthesisUtterance(sentence);
         u.rate = 1.0;
         window.speechSynthesis.speak(u);
@@ -1145,6 +1555,7 @@ body[data-kind="prep"] .dial-time{color:var(--graphite);}
     bellFired: false,
     speechFired: false,
     oneMinWarnFired: false,
+    warnFired: false,
     lastTickSec: null,
     rafId: null
   };
@@ -1193,35 +1604,47 @@ body[data-kind="prep"] .dial-time{color:var(--graphite);}
   var dialTimeEl = document.getElementById("dialTime");
   var stageTitleEl = document.getElementById("stageTitle");
   var stageFlagEl = document.getElementById("stageFlag");
-  var poseFlagEl = document.getElementById("poseFlag");
   var nextLineEl = document.getElementById("nextLine");
   var railFill = document.getElementById("railFill");
   var sessionClock = document.getElementById("sessionClock");
   var liveRegion = document.getElementById("liveRegion");
 
-  function poseFlagText(step){
-    var total = step.stagePoseTotal;
-    if(!total) return "";
-    if(step.type === "prep"){
-      return total+(total===1?" POSE":" POSES")+" THIS STAGE";
-    }
-    if(!step.stagePoseNumber) return "";
-    var left = total - step.stagePoseNumber;
-    return "POSE "+step.stagePoseNumber+" OF "+total+(left>0 ? " — "+left+" LEFT" : " — LAST ONE");
+  /* Pose number shown for a step: prep shows the pose about to start,
+     the rest after a stage's last pose keeps showing that last pose. */
+  function poseNumberFor(step){
+    if(step.type === "prep") return 1;
+    return step.stagePoseNumber || step.stagePoseTotal;
   }
 
+  /* Tea isn't a drawing stage, so it's left out of the stage count. */
   function stageNumberFor(index){
-    var s = runtime.steps[index];
     var seen = [];
     for(var i=0;i<=index;i++){
-      if(seen.indexOf(runtime.steps[i].stageIndex) === -1) seen.push(runtime.steps[i].stageIndex);
+      var k = runtime.steps[i].stageIndex;
+      if(k !== "tea" && seen.indexOf(k) === -1) seen.push(k);
     }
     return seen.length;
   }
   function totalStages(){
     var seen = {};
-    runtime.steps.forEach(function(s){ seen[s.stageIndex]=1; });
+    runtime.steps.forEach(function(s){ if(s.stageIndex !== "tea") seen[s.stageIndex]=1; });
     return Object.keys(seen).length;
+  }
+
+  function flagText(index){
+    var step = runtime.steps[index];
+    if(step.type === "tea") return "Tea break";
+    return "Stage: "+stageNumberFor(index)+"/"+totalStages()+"  Pose: "+poseNumberFor(step)+"/"+step.stagePoseTotal;
+  }
+  function renderFlag(index){
+    var step = runtime.steps[index];
+    if(step.type === "tea"){
+      stageFlagEl.innerHTML = "<span>Tea break</span>";
+      return;
+    }
+    stageFlagEl.innerHTML =
+      '<span><span class="flag-key">Stage:</span> '+stageNumberFor(index)+'/'+totalStages()+'</span>'+
+      '<span><span class="flag-key">Pose:</span> '+poseNumberFor(step)+'/'+step.stagePoseTotal+'</span>';
   }
 
   function elapsedBeforeStep(index){
@@ -1242,19 +1665,18 @@ body[data-kind="prep"] .dial-time{color:var(--graphite);}
     runtime.bellFired = false;
     runtime.speechFired = false;
     runtime.oneMinWarnFired = false;
+    runtime.warnFired = false;
     runtime.lastTickSec = null;
     runtime.elapsedBase = elapsedBeforeStep(index);
 
     document.body.dataset.kind = step.type;
     stageTitleEl.textContent = step.title;
-    stageFlagEl.textContent = "STAGE "+stageNumberFor(index)+" OF "+totalStages();
-    var poseFlagText_ = poseFlagText(step);
-    poseFlagEl.textContent = poseFlagText_ || " ";
+    renderFlag(index);
 
     var next = runtime.steps[index+1];
     nextLineEl.innerHTML = next ? "NEXT — <strong>"+next.title.toLowerCase()+"</strong>" : "Final step";
 
-    liveRegion.textContent = step.title + (poseFlagText_ ? ". "+poseFlagText_ : "");
+    liveRegion.textContent = step.title+". "+flagText(index);
     speak(step.speech);
 
     drawDial(1, step.type);
@@ -1288,6 +1710,10 @@ body[data-kind="prep"] .dial-time{color:var(--graphite);}
       runtime.oneMinWarnFired = true;
       speak("One minute remaining.");
     }
+    if(!runtime.warnFired && currentStep.warnAt && remainSec <= currentStep.warnAt){
+      runtime.warnFired = true;
+      speak(currentStep.warnSpeech);
+    }
 
     var elapsedTotal = runtime.elapsedBase + (elapsedMs/1000);
     sessionClock.textContent = fmtClock(elapsedTotal)+" / "+fmtClock(runtime.totalPlannedSec);
@@ -1313,7 +1739,7 @@ body[data-kind="prep"] .dial-time{color:var(--graphite);}
   }
 
   function startSession(){
-    var sched = buildSchedule(state.totalMinutes, state.preset, currentStages(state.restStyle));
+    var sched = buildDay(state, new Date());
     runtime.steps = sched.steps;
     runtime.totalPlannedSec = sched.actualTotal;
     runtime.running = true;
@@ -1368,6 +1794,7 @@ body[data-kind="prep"] .dial-time{color:var(--graphite);}
   function stopSession(){
     endRuntime();
     document.body.dataset.view = "setup";
+    updatePreview();
   }
 
   document.getElementById("startBtn").addEventListener("click", startSession);
@@ -1402,6 +1829,7 @@ body[data-kind="prep"] .dial-time{color:var(--graphite);}
   });
   document.getElementById("restartBtn").addEventListener("click", function(){
     document.body.dataset.view = "setup";
+    updatePreview();
   });
 
   document.addEventListener("keydown", function(e){
