@@ -1470,10 +1470,24 @@ body[data-kind="tea"] .dial-time{color:var(--graphite);}
   var audioCtx = null;
   function ensureAudio(){
     if(!audioCtx){
+      /* iPhone mutes Web Audio while the ring/silent switch is on unless
+         the page declares itself as playback audio (Safari 16.4+). */
+      try{ if(navigator.audioSession) navigator.audioSession.type = "playback"; }catch(e){}
       var AC = window.AudioContext || window.webkitAudioContext;
-      if(AC) audioCtx = new AC();
+      if(AC){
+        audioCtx = new AC();
+        /* Older iOS only unlocks audio once something actually plays
+           inside the user's tap, so play one silent sample now. */
+        try{
+          var src = audioCtx.createBufferSource();
+          src.buffer = audioCtx.createBuffer(1, 1, 22050);
+          src.connect(audioCtx.destination);
+          src.start(0);
+        }catch(e){}
+      }
     }
-    if(audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+    /* iOS reports "interrupted" (not "suspended") after a call or screen lock. */
+    if(audioCtx && audioCtx.state !== "running") audioCtx.resume();
     return audioCtx;
   }
 
@@ -1517,7 +1531,10 @@ body[data-kind="tea"] .dial-time{color:var(--graphite);}
     if(!document.getElementById("toggleVoice").checked) return;
     if(!("speechSynthesis" in window)) return;
     try{
-      window.speechSynthesis.cancel();
+      /* Safari can drop an utterance queued straight after an idle cancel(). */
+      if(window.speechSynthesis.speaking || window.speechSynthesis.pending){
+        window.speechSynthesis.cancel();
+      }
       /* Some mobile TTS engines (e.g. Android Chrome) ignore embedded
          sentence punctuation as a pause cue and run text together.
          Queuing separate utterances forces a real gap on every platform. */
@@ -1547,6 +1564,7 @@ body[data-kind="tea"] .dial-time{color:var(--graphite);}
   document.addEventListener("visibilitychange", function(){
     if(document.visibilityState === "visible" && document.body.dataset.view === "session" && runtime.running){
       requestWake();
+      ensureAudio();
     }
   });
 
@@ -1774,6 +1792,7 @@ body[data-kind="tea"] .dial-time{color:var(--graphite);}
     if(runtime.running) return;
     runtime.stepStart = performance.now() - (runtime.stepDurationMs - runtime.pausedRemainMs);
     runtime.running = true;
+    ensureAudio();
     setPlayPauseUI(true);
     requestWake();
     runtime.rafId = requestAnimationFrame(tick);
